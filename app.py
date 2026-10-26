@@ -8,13 +8,22 @@ from google.genai import errors, types
 from pypdf import PdfReader
 
 MODELOS = ["gemini-3.8-flash", "gemini-3.5-flash-lite"]  # si el primero falla, prueba el segundo
-CAMPOS = ["proveedor", "numero_parte", "cantidad", "precio_unitario",
-          "plazo_entrega", "fecha_validez"]
+CAMPOS = ["proveedor", "numero_parte", "descripcion", "cantidad",
+          "precio_unitario", "plazo_entrega", "fecha_validez"]
+ETIQUETAS = {
+    "proveedor": "Proveedor",
+    "numero_parte": "Número de parte",
+    "descripcion": "Descripción",
+    "cantidad": "Cantidad",
+    "precio_unitario": "Precio unitario",
+    "plazo_entrega": "Plazo de entrega",
+    "fecha_validez": "Fecha de validez",
+}
 NO_ENCONTRADO = "No encontrado"
 
 PROMPT = """Eres un asistente que lee cotizaciones de proveedores para un equipo de compras.
 Del texto de abajo extrae una fila por cada artículo cotizado, con estos campos exactos:
-proveedor, numero_parte, cantidad, precio_unitario, plazo_entrega, fecha_validez.
+proveedor, numero_parte, descripcion, cantidad, precio_unitario, plazo_entrega, fecha_validez.
 
 Reglas:
 - Devuelve SOLO una lista JSON de objetos, sin texto adicional.
@@ -114,7 +123,7 @@ if archivo is not None:
                 )
 
     if "df" in st.session_state:
-        df = st.session_state["df"]
+        df = st.session_state["df"].rename(columns=ETIQUETAS)
         st.dataframe(df, hide_index=True)
         st.download_button("Descargar CSV", df.to_csv(index=False).encode("utf-8-sig"),
                            file_name="cotizacion.csv", mime="text/csv")
