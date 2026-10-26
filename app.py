@@ -115,6 +115,6 @@ if archivo is not None:
 
     if "df" in st.session_state:
         df = st.session_state["df"]
-        st.dataframe(df)
+        st.dataframe(df, hide_index=True)
         st.download_button("Descargar CSV", df.to_csv(index=False).encode("utf-8-sig"),
                            file_name="cotizacion.csv", mime="text/csv")
