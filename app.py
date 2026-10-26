@@ -1,4 +1,5 @@
 import json
+import time
 
 import pandas as pd
 import streamlit as st
@@ -6,7 +7,7 @@ from google import genai
 from google.genai import errors, types
 from pypdf import PdfReader
 
-MODELO = "gemini-3.8-flash"  # si da error 429, probar "gemini-3.5-flash-lite"
+MODELOS = ["gemini-3.8-flash", "gemini-3.5-flash-lite"]  # si el primero falla, prueba el segundo
 CAMPOS = ["proveedor", "numero_parte", "cantidad", "precio_unitario",
           "plazo_entrega", "fecha_validez"]
 NO_ENCONTRADO = "No encontrado"
