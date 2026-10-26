@@ -35,16 +35,27 @@ def leer_pdf(archivo) -> str:
 
 
 def extraer_filas(texto: str) -> list:
-    """Pide a Gemini los datos de la cotización y devuelve una lista de diccionarios."""
+    """Pide a Gemini los datos de la cotización; si el modelo está saturado, prueba otro."""
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-    respuesta = client.models.generate_content(
-        model=MODELO,
-        contents=PROMPT.format(texto=texto[:20000]),
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json", temperature=0
-        ),
-    )
-    return json.loads(respuesta.text)
+    ultimo_error = None
+    for modelo in MODELOS:
+        for intento in range(2):
+            try:
+                respuesta = client.models.generate_content(
+                    model=modelo,
+                    contents=PROMPT.format(texto=texto[:20000]),
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json", temperature=0
+                    ),
+                )
+                return json.loads(respuesta.text)
+            except errors.APIError as e:
+                if e.code in (429, 503):
+                    ultimo_error = e
+                    time.sleep(2)
+                else:
+                    raise
+    raise ultimo_error
 
 
 st.set_page_config(page_title="Lector de cotizaciones", page_icon="📄")
