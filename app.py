@@ -36,6 +36,12 @@ Texto de la cotización:
 """
 
 
+@st.cache_resource
+def obtener_cliente(api_key: str) -> genai.Client:
+    """Crea el cliente de Gemini una sola vez y lo reutiliza entre peticiones."""
+    return genai.Client(api_key=api_key)
+
+
 def leer_pdf(archivo) -> str:
     """Devuelve el texto de todas las páginas del PDF."""
     lector = PdfReader(archivo)
@@ -45,7 +51,7 @@ def leer_pdf(archivo) -> str:
 
 def extraer_filas(texto: str) -> list:
     """Pide a Gemini los datos de la cotización; si el modelo está saturado, prueba otro."""
-    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+    client = obtener_cliente(st.secrets["GEMINI_API_KEY"])
     ultimo_error = None
     for modelo in MODELOS:
         for intento in range(2):
@@ -72,6 +78,13 @@ st.title("Lector de cotizaciones 📄")
 st.write("Sube una cotización en PDF y te devuelvo una tabla con los datos clave, "
          "lista para descargar en CSV.")
 st.caption("Usa solo documentos de ejemplo: el texto se envía a la API de Gemini.")
+
+# La clave NUNCA va en el código: vive en Settings > Secrets de Streamlit Cloud
+try:
+    st.secrets["GEMINI_API_KEY"]
+except Exception:
+    st.error("Falta el secreto GEMINI_API_KEY. Añádelo en Settings → Secrets de la app.")
+    st.stop()
 
 archivo = st.file_uploader("Cotización en PDF", type=["pdf"])
 
@@ -103,27 +116,4 @@ if archivo is not None:
                 st.error("Falta la clave de la IA en la configuración de la app.")
             except errors.APIError as e:
                 if e.code == 429:
-                    st.warning("Se ha agotado la cuota gratuita por ahora. "
-                               "Espera un minuto y vuelve a intentarlo.")
-                else:
-                    st.error(f"El servicio de IA no ha respondido (error {e.code}). "
-                             "Inténtalo de nuevo en unos minutos.")
-            except json.JSONDecodeError:
-                st.error("La IA devolvió algo que no he podido leer. Inténtalo de nuevo.")
-            except Exception:
-                st.error("Algo ha fallado al procesar la cotización. Inténtalo de nuevo.")
-
-        if filas is not None:
-            if not isinstance(filas, list) or not filas or not all(isinstance(f, dict) for f in filas):
-                st.warning("No he encontrado datos de cotización en este documento. "
-                           "¿Seguro que es una cotización?")
-            else:
-                st.session_state["df"] = (
-                    pd.DataFrame(filas).reindex(columns=CAMPOS).fillna(NO_ENCONTRADO)
-                )
-
-    if "df" in st.session_state:
-        df = st.session_state["df"].rename(columns=ETIQUETAS)
-        st.dataframe(df, hide_index=True)
-        st.download_button("Descargar CSV", df.to_csv(index=False).encode("utf-8-sig"),
-                           file_name="cotizacion.csv", mime="text/csv")
+                    st.warning("Se ha agotado la cuota
