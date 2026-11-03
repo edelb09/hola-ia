@@ -81,7 +81,7 @@ st.caption("Usa solo documentos de ejemplo: el texto se envía a la API de Gemin
 
 # La clave NUNCA va en el código: vive en Settings > Secrets de Streamlit Cloud
 try:
-    st.secrets["GEMINI_API_KEY"]
+       _ = st.secrets["GEMINI_API_KEY"]
 except Exception:
     st.error("Falta el secreto GEMINI_API_KEY. Añádelo en Settings → Secrets de la app.")
     st.stop()
